@@ -1,5 +1,5 @@
 === WooCommerce Retargeting ===
-Contributors: Retargeting Team
+Contributors: retargeting
 Tags: retargeting, woocommerce
 Requires at least: 3.8
 Tested up to: 4.2
@@ -11,8 +11,6 @@ License: GPLv2
 Adds Retargeting tracking to WooCommerce.
 
 == Description ==
-
-Retargeting
 
 Retargeting and Marketing Automation
 
@@ -58,6 +56,11 @@ For help or more info, please contact [info@retargeting.biz](mailto:info@retarge
 2. Activate the plugin through the 'Plugins' menu in WordPress
 
 == Screenshots ==
+
+1. Retargeting Dashboard
+2. Live Triggers
+3. Multitesting
+4. Email & SMS Triggers
 
 == Frequently Asked Questions ==
 
