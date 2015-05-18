@@ -6,6 +6,20 @@ if(isset($product) && is_array($product)):
 ?>
 
 <script>
+function _ra_helper_addLoadEvent(func) {
+var oldonload = window.onload;
+if (typeof window.onload != 'function') {
+window.onload = func;
+} else {
+window.onload = function() {
+if (oldonload) {
+oldonload();
+}
+func();
+}
+}
+}
+
 var _ra = _ra || {};
 	_ra.sendProductInfo = {
 		"id": <?php echo $product['pid']; ?>,
@@ -28,22 +42,23 @@ var _ra = _ra || {};
 		_ra.sendProduct(_ra.sendProductInfo);
 	}
 
-	//click image
+// clickImage
 
-	_ra.clickImageInfo = {
-		"product_id" : <?php echo $product['pid']; ?>
-	};
-
-	document.addEventListener('DOMContentLoaded', _ra_mouse_over, false);
-		function _ra_mouse_over(){
-			if ( document.getElementsByClassName("attachment-shop_single").length > 0 ) {
-		        	document.getElementsByClassName("attachment-shop_single")[0].onmouseover  = function(){console.log("Click");};
-		}
+function _ra_triggerClickImage() {
+	if(typeof _ra.clickImage !== "undefined") _ra.clickImage("<?php echo $product['pid']; ?>");
+}
+_ra_helper_addLoadEvent(function(){
+	if(document.getElementsByClassName("attachment-shop_single").length > 0){
+		document.getElementsByClassName("attachment-shop_single")[0].onmouseover = _ra_triggerClickImage;
+	}
+	
+		if(document.getElementsByClassName("product-gallery-slider").length > 0){
+		document.getElementsByClassName("product-gallery-slider")[0].onmouseover = _ra_triggerClickImage;
 	}
 
-	if (_ra.ready !== undefined) {
-		_ra.clickImage(_ra.clickImageInfo.product_id);
-	}
+});
+
+// setVariation
 
 </script>
 <?php endif; ?>

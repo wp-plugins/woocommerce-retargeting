@@ -1,5 +1,7 @@
 <?php
 class WC_Integration_Retargeting_Tracking extends WC_Integration {
+	public $domain_api_key;
+	public $discounts_api_key;
 	
 	/*
 	* Construct
@@ -7,18 +9,28 @@ class WC_Integration_Retargeting_Tracking extends WC_Integration {
 	public function __construct(){
 		$this->id = 'retargeting';
 		$this->method_title = "Retargeting Tracking";
-		$this->method_description = __('Implements the required...');
+		$this->method_description = __('');
 
 		$this->init_form_fields();
 		$this->init_settings();
-
+		
 		add_action('woocommerce_update_options_integration_retargeting', array($this, 'process_admin_options'));
 		add_filter('plugin_action_links', array($this, 'register_action_links'), 10, 2);
+
 	}
+
 	/*
 	* Init admin form
 	*/
 	function init_form_fields(){
+//list all pages
+
+$pages = get_pages();
+$pgs = array();
+foreach($pages as $page ){
+    $pgs[$page->post_name] = $page->post_title;
+}
+//list all pages
 		$this->form_fields = array(
 			'domain_api_key'=> array(
 				'title'	=>	__('Domain API KEY'),
@@ -32,7 +44,13 @@ class WC_Integration_Retargeting_Tracking extends WC_Integration {
 				'type'	=> 'text',
 				'default'	=> '',
 			),
-			);
+			'help_pages'	=> array(
+				'title'		=>	__('Help Pages'),
+				'description'	=>	__('Select Help Pages'),
+				'type'		=>	'multiselect',
+				'options'	=> $pgs
+			),
+		);
 	}
 
 	/*
