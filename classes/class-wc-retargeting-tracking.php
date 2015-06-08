@@ -28,7 +28,7 @@ class WC_Integration_Retargeting_Tracking extends WC_Integration
         $this->init_settings();
 
         $this->domain_api_key = $this->get_option('domain_api_key');
-        $this->discount_api_key = $this->get_option('discount_api_key');
+        $this->discount_api_key = $this->get_option('discounts_api_key');
         $this->help_pages = $this->get_option('help_pages');
 
         add_action('woocommerce_update_options_integration_retargeting', array($this, 'process_admin_options'));
@@ -60,9 +60,10 @@ class WC_Integration_Retargeting_Tracking extends WC_Integration
         add_action('woocommerce_after_checkout_form', array($this, 'checkout_ids'), 90, 0);
         // SaveOrder
         add_action('woocommerce_thankyou', array($this, 'save_order'));
-//        add_action('woocommerce_thankyou', 'save_order');
+        // API's
+        add_action('template_redirect', array($this,'discount_api_template'));
+        add_filter( 'query_vars', array($this,'retargeting_api_add_query_vars'));
 
-//add_action('parse_request', array($this, 'my_custom_url'));
 
     }
 
@@ -81,13 +82,13 @@ class WC_Integration_Retargeting_Tracking extends WC_Integration
         $this->form_fields = array(
             'domain_api_key' => array(
                 'title' => __('Domain API KEY'),
-                'description' => __('Insert retargeting Domain API Key. <a href="https://retargeting.biz/admin/module/settings/docs-and-api" target="_blank">Click here</a> to get your Domain API Key'),
+                'description' => __('Insert retargeting Domain API Key. <a href="https://retargeting.biz/admin?action=api_redirect&token=5ac66ac466f3e1ec5e6fe5a040356997" target="_blank">Click here</a> to get your Domain API Key'),
                 'type' => 'text',
                 'default' => '',
             ),
             'discounts_api_key' => array(
                 'title' => __('Discounts API KEY'),
-                'description' => __('Insert retargeting Discounts API Key. <a href="https://retargeting.biz/admin/module/settings/docs-and-api" target="_blank">Click here</a> to get your Discounts API Key'),
+                'description' => __('Insert retargeting Discounts API Key. <a href="https://retargeting.biz/admin?action=api_redirect&token=028e36488ab8dd68eaac58e07ef8f9bf" target="_blank">Click here</a> to get your Discounts API Key'),
                 'type' => 'text',
                 'default' => '',
             ),
@@ -260,6 +261,7 @@ for(var i = 0; i < _ra_v.length; i ++) {
 var _ra_label = document.querySelector(\'[for="\' + _ra_v[i].getAttribute(\'id\') + \'"\');
 _ra_label = (_ra_label !== null ? _ra_label = document.querySelector(\'[for="\' + _ra_v[i].getAttribute(\'id\') + \'"\').textContent : _ra_v[i].getAttribute(\'data-option\') );
 var _ra_value = (typeof _ra_v[i].value !== \'undefined\' ? _ra_v[i].value : _ra_v[i].textContent);
+_ra_value = _ra_value.replace(/-/g, "_");
 _ra_vcode.push(_ra_value);
 _ra_vdetails[_ra_value] = {
 "category_name": _ra_label,
@@ -542,48 +544,121 @@ var _ra = _ra || {};
         }
     }
 
-    /*
-    * Product Feed
+   /*
+    * URL DISCOUNT API
     */
-    public function products_feed()
-    {
+   function retargeting_api_add_query_vars($vars){
+    $vars[] = "retargeting";
+    $vars[] = "key";
+    $vars[] = "value";
+    $vars[] = "type";
+    $vars[] = "count";
+    return $vars;
+   }
+
+   function discount_api_template($template){
+    global $wp_query;
+
+    if(isset($wp_query->query['retargeting']) && $wp_query->query['retargeting'] == 'discounts') {        
+        if(isset($wp_query->query['key']) && isset($wp_query->query['value']) && isset($wp_query->query['type']) && isset($wp_query->query['count']) ){
+                    if( $wp_query->query['key'] != "" && $wp_query->query['key'] == $this->discount_api_key && $wp_query->query['value'] != "" && $wp_query->query['type'] != "" && $wp_query->query['count'] != ""){
+                        //daca totul este ok, genereaza si afiseaza codurile de reducere
+                        echo generate_coupons($wp_query->query['count']);
+                        exit;
+                    } else {
+                        echo json_encode(array("status"=>false,"error"=>"0002: Invalid Parameters!"));
+                        exit;
+                    }
+                }else{
+                        echo json_encode(array("status"=>false,"error"=>"0001: Missing Parameters!"));
+                        exit;
+                }
+            }
+        }
     }
 
+//genereaza coduri de reducere random
+function generate_coupons($count) {
+    global $wp_query;
+
+    $couponChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    $couponCodes = array();
+    for($x = 0; $x < $count; $x++){
+        $couponCode = "";
+        for ($i = 0; $i < 8; $i++) {
+            
+            $couponCode .= $couponChars[mt_rand(0, strlen($couponChars)-1)];
+            
+        }
+        if(woocommerce_verify_discount($couponCode)){
+
+            woocommerce_add_discount($couponCode,$wp_query->query['value'],$wp_query->query['type']);
+            $couponCodes[] = $couponCode;
+
+        } else {
+            $x-= 1;
+        }
+
+    }
+    return json_encode($couponCodes,JSON_PRETTY_PRINT);
+}
+
+function woocommerce_verify_discount($code){
+    global $woocommerce;
+    $o = new WC_Coupon($code);
+    if($o->exists == 1){
+        return false;
+    }else {
+
+    return true;
+    }
+
+}
+//adauga coduri in woocommerce
+function woocommerce_add_discount($code,$discount,$type){
+    global $wp_query;
+
+    //Retargeting discount Types
     /*
-    * Generate Discounts
-    *
+    0 - fixed value,
+    1 - percentage value,
+    2 - free delivery
     */
-    public function generate_discounts()
-    {
-    }
 
-    /*
-     * Feed Discounts
-     *
-     * */
-    public function feed_discounts()
-    {
-    }
+    $type = $wp_query->query['type'];
 
-    /*
-     * Init Discounts
-     * */
-    public function init_discounts()
-    {
-    }
+if($type == 0){
+    $discount_type = 'fixed_cart';
+}elseif($type == 1){
+    $discount_type = 'percent';
+}
+elseif($type == 2){
+    $discount_type = '';
+}
+    $coupon_code = $code; // Code
+    $amount = $discount; // Amount
+    // $discount_type = 'fixed_cart'; // Type: fixed_cart, percent, fixed_product, percent_product
+                    
+    $coupon = array(
+        'post_title' => $coupon_code,
+        'post_content' => '',
+        'post_status' => 'future',
+        'post_author' => 1,
+        'post_type'     => 'shop_coupon'
+    );
+                    
+    $new_coupon_id = wp_insert_post( $coupon );
 
-    /*
-     * Status Discounts
-     * */
-    public function status_discounts()
-    {
-    }
+    // Add meta
+    update_post_meta( $new_coupon_id, 'discount_type', $discount_type );
+    update_post_meta( $new_coupon_id, 'coupon_amount', $amount );
+    update_post_meta( $new_coupon_id, 'individual_use', 'no' );
+    update_post_meta( $new_coupon_id, 'product_ids', '' );
+    update_post_meta( $new_coupon_id, 'exclude_product_ids', '' );
+    update_post_meta( $new_coupon_id, 'usage_limit', '' );
+    update_post_meta( $new_coupon_id, 'expiry_date', '' );
+    update_post_meta( $new_coupon_id, 'apply_before_tax', 'yes' );
+    update_post_meta( $new_coupon_id, 'free_shipping', 'no' );
 
-    /*
-     * Test
-     * */
-    public function my_custom_url()
-    {
-    }
 
 }

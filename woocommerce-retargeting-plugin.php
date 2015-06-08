@@ -3,7 +3,7 @@
  * Plugin Name: WooCommerce Retargeting
  * Plugin URI: https://retargeting.biz/woocommerce-documentation
  * Description: Adds Retargeting Tracking code to WooCommerce.
- * Version: 0.0.8
+ * Version: 1.0.0
  * Author: Retargeting Team
  * Author URI: http://retargeting.biz
  * License: GPL2
@@ -24,7 +24,7 @@ class WC_Retargeting_Tracking {
     /*
     * Plugin Version.
     */
-    const VERSION = '0.0.8';
+    const VERSION = '1.0.0';
     /*
     * Instance of this class
     */
@@ -35,7 +35,7 @@ class WC_Retargeting_Tracking {
     private function __construct(){
 	add_action('init', array($this, 'load_plugin_textdomain') );
 	//Check if WooCommerce is installed.
-	if(class_exists('WC_Integration') && defined('WOOCOMMERCE_VERSION') && version_compare(WOOCOMMERCE_VERSION, '2.3.0', '>=') ) {
+	if(class_exists('WC_Integration') && defined('WOOCOMMERCE_VERSION') && version_compare(WOOCOMMERCE_VERSION, '2.2.6', '>=') ) {
 	    include_once 'classes/class-wc-retargeting-tracking.php';
 	    
 	    //Register integration
